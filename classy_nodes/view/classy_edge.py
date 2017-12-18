@@ -70,13 +70,10 @@ class ClassyEdge(QGraphicsItem):
         """
         painter.setRenderHint(QPainter.Antialiasing)
 
-        painter.setPen(self.pen)
-
-        r = self.boundingRect()
-
         f = self.get_node_from_pos()
         t = self.get_node_to_pos()
 
+        painter.setPen(self.pen)
         painter.drawLine(f, t)
 
         painter.setPen(Qt.NoPen)
