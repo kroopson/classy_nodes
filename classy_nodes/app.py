@@ -1,10 +1,8 @@
 from PySide.QtGui import QWidget
 from PySide.QtGui import QVBoxLayout
 
-from view import ClassyNode
 from view import ClassyView
 from view import ClassyScene
-from view import ClassyEdge
 
 
 class ClassyWidget(QWidget):
@@ -16,15 +14,18 @@ class ClassyWidget(QWidget):
         layout.addWidget(self.view)
         self.scene = ClassyScene(self)
         self.view.setScene(self.scene)
-        self.node = ClassyNode()
-        self.node2 = ClassyNode()
-        self.scene.addItem(self.node)
-        self.scene.addItem(self.node2)
-        self.node.setZValue(10.0)
-        self.node2.setZValue(10.1)
+        self.scene.add_node('node1')
+        self.scene.add_node('node2')
+        self.scene.add_node('node3')
+        self.scene.add_node('node4')
+        self.scene.add_node('node5')
+        self.scene.add_node('node6')
+        self.scene.add_node('node7')
 
-        self.edge = ClassyEdge()
-        self.scene.addItem(self.edge)
+        self.scene.add_edge('node1', 'node3')
 
-        self.edge.set_node_from(self.node)
-        self.edge.set_node_to(self.node2)
+        self.scene.add_edge('node1', 'node2')
+
+        self.scene.add_edge('node1', 'node5')
+
+        self.scene.add_edge('node4', 'node6')

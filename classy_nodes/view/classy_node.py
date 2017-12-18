@@ -12,9 +12,9 @@ nodes_font = QFont("Impact", 19)
 
 
 class ClassyNode(QGraphicsItem):
-    def __init__(self):
+    def __init__(self, name):
         QGraphicsItem.__init__(self)
-        self.label = "Node"
+        self.label = name
         self.edges_in = []
         self.edges_out = []
 

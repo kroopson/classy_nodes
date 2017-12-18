@@ -1,11 +1,14 @@
 from PySide.QtGui import QGraphicsScene
 
-from classy_nodes.view import ClassyNode
+from classy_nodes.view import ClassyNode, ClassyEdge
 
 
 class ClassyScene(QGraphicsScene):
     def __init__(self, parent=None):
         QGraphicsScene.__init__(self, parent)
+
+        self.nodes = dict()
+        self.edges = []
 
     def get_node_at_point(self, pos):
         """
@@ -24,3 +27,18 @@ class ClassyScene(QGraphicsScene):
                 break
 
         return hit_item
+
+    def add_node(self, name):
+        if name in self.nodes:
+            return self.nodes.get(name)
+
+        node = ClassyNode(name)
+        self.nodes[name] = node
+        self.addItem(node)
+
+    def add_edge(self, node_from, node_to, two_way=False):
+        edge = ClassyEdge()
+        edge.set_node_from(self.nodes.get(node_from))
+        edge.set_node_to(self.nodes.get(node_to))
+        self.addItem(edge)
+        self.edges.append(edge)
