@@ -28,6 +28,12 @@ class ClassyScene(QGraphicsScene):
 
         return hit_item
 
+    def get_next_node_z_value(self):
+        if not self.nodes:
+            return 10.0
+        z = max([self.nodes.get(x).zValue() for x in self.nodes])
+        return z + 0.01
+
     def add_node(self, name):
         if name in self.nodes:
             return self.nodes.get(name)
@@ -35,9 +41,10 @@ class ClassyScene(QGraphicsScene):
         node = ClassyNode(name)
         self.nodes[name] = node
         self.addItem(node)
+        node.setZValue(self.get_next_node_z_value())
 
-    def add_edge(self, node_from, node_to, two_way=False):
-        edge = ClassyEdge()
+    def add_edge(self, node_from, node_to, conditional_to=False, two_way=False, conditional_from=False):
+        edge = ClassyEdge(two_way=two_way, conditional_to=conditional_to, conditional_from=conditional_from)
         edge.set_node_from(self.nodes.get(node_from))
         edge.set_node_to(self.nodes.get(node_to))
         self.addItem(edge)

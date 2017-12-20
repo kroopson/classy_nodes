@@ -1,19 +1,29 @@
-from PySide.QtCore import QRect, QPointF, Qt
-from PySide.QtGui import QGraphicsItem, QPainter, QPen, QColor, QVector2D, QTransform, QBrush
 import weakref
+from PySide.QtCore import QRect, QPointF, Qt
+from PySide.QtGui import QGraphicsItem, QPainter, QPen, QVector2D, QTransform, QBrush
+from config import CONDITIONAL_TRANSITION_COLOR
+from config import NON_CONDITIONAL_TRANSITION_COLOR
 
 
 class ClassyEdge(QGraphicsItem):
-    def __init__(self):
+    def __init__(self, conditional_to=False, two_way=False, conditional_from=False):
         QGraphicsItem.__init__(self)
 
         self.node_from = None
         self.node_to = None
 
-        self.pen = QPen(QColor(50, 90, 50))
-        self.brush = QBrush(QColor(50, 90, 50))
-        self.pen.setWidth(4)
+        self.conditional_to = conditional_to
+        self.conditional_from = conditional_from
+
+        if conditional_to:
+            self.pen = QPen(CONDITIONAL_TRANSITION_COLOR)
+            self.brush = QBrush(CONDITIONAL_TRANSITION_COLOR)
+        else:
+            self.pen = QPen(NON_CONDITIONAL_TRANSITION_COLOR)
+            self.brush = QBrush(NON_CONDITIONAL_TRANSITION_COLOR)
+
         self.arrow_length = 10
+        self.two_way = two_way
 
     def boundingRect(self):
         if not self.node_from or not self.node_to:
@@ -72,19 +82,69 @@ class ClassyEdge(QGraphicsItem):
 
         f = self.get_node_from_pos()
         t = self.get_node_to_pos()
+        if not self.two_way:
+            if self.conditional_to:
+                pen = QPen(CONDITIONAL_TRANSITION_COLOR)
+                pen.setWidth(4)
+                painter.setPen(pen)
+                painter.setBrush(CONDITIONAL_TRANSITION_COLOR)
+            else:
+                pen = QPen(NON_CONDITIONAL_TRANSITION_COLOR)
+                pen.setWidth(4)
+                painter.setPen(pen)
+                painter.setBrush(NON_CONDITIONAL_TRANSITION_COLOR)
+            self._draw_arrow(painter, f, t, self.arrow_length)
+            return
 
-        painter.setPen(self.pen)
-        painter.drawLine(f, t)
+        to_vector = QVector2D(t - f)
+        to_vector.normalize()
+        to_vector *= self.arrow_length
 
+        xform = QTransform()
+        xform.rotate(90)
+
+        mapped = xform.map(to_vector.toPointF())
+
+        from_start = mapped + f
+        from_end = mapped + t
+        if self.conditional_to:
+            pen = QPen(CONDITIONAL_TRANSITION_COLOR)
+            pen.setWidth(4)
+            painter.setPen(pen)
+            painter.setBrush(CONDITIONAL_TRANSITION_COLOR)
+        else:
+            pen = QPen(NON_CONDITIONAL_TRANSITION_COLOR)
+            pen.setWidth(4)
+            painter.setPen(pen)
+            painter.setBrush(NON_CONDITIONAL_TRANSITION_COLOR)
+        self._draw_arrow(painter, from_start, from_end, self.arrow_length)
+
+        from_start = -mapped + t
+        from_end = -mapped + f
+        if self.conditional_from:
+            pen = QPen(CONDITIONAL_TRANSITION_COLOR)
+            pen.setWidth(4)
+            painter.setPen(pen)
+            painter.setBrush(CONDITIONAL_TRANSITION_COLOR)
+        else:
+            pen = QPen(NON_CONDITIONAL_TRANSITION_COLOR)
+            pen.setWidth(4)
+            painter.setPen(pen)
+            painter.setBrush(NON_CONDITIONAL_TRANSITION_COLOR)
+        self._draw_arrow(painter, from_start, from_end, self.arrow_length)
+
+
+    @staticmethod
+    def _draw_arrow(painter, from_point, to_point, arrow_size=5):
+        painter.drawLine(from_point, to_point)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(self.brush)
-        center = (f + t) / 2
+        center = (from_point + to_point) / 2
 
-        center_to_t = QVector2D(t - center)
+        center_to_t = QVector2D(to_point - center)
 
         center_to_t.normalize()
 
-        center_to_t *= self.arrow_length
+        center_to_t *= arrow_size
         t = QTransform()
         arrow_points = [center + center_to_t.toPointF()]
         t.rotate(120)
@@ -92,4 +152,3 @@ class ClassyEdge(QGraphicsItem):
         t.rotate(120)
         arrow_points.append(center + t.map(center_to_t.toPointF()))
         painter.drawPolygon(arrow_points)
-
