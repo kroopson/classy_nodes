@@ -1,0 +1,601 @@
+package playerStateMachineLocomotion
+using playerStateMachineStateBase
+
+// states for Locomotion state machine
+
+//------------ FORCE STATES ------------
+
+forceIdle : locomotionGround
+{
+	string alias = "toForceState"
+	
+	bool hasOnEnter = true
+	
+	CName onEnterCameraParamsName = "Tier3Scene"
+	
+	bool hasEnterCondition = true
+	
+	string[] transitionTo = 		[ "forceWalk",	"forceFreeze",	"stand" ]
+	string[] transitionCondition = 	[ "",		"",			"=" ]
+	
+	string scriptedClassName = "ForceIdle"
+	string stateBodyClassName = "LocomotionForceFreeze"
+	
+	bool allowMovementInput				= false
+}
+
+forceFreeze : locomotionGround
+{
+	string alias = "toForceState"
+	
+	bool hasOnEnter = true
+	
+	CName onEnterCameraParamsName = "LockedHeading"
+	
+	bool hasEnterCondition = true
+	
+	string[] transitionTo = 		[ "forceIdle",	"forceWalk",	"stand" ]
+	string[] transitionCondition = 	[ "",		"",			"=" ]
+	
+	string scriptedClassName = "ForceFreeze"
+	string stateBodyClassName = "LocomotionForceFreeze"
+	
+	bool allowRotation 		= false
+	bool allowMovementInput	= false
+	
+	float downwardsGravity			= 0
+}
+
+forceWalk : locomotionGround
+{
+	string alias = "toForceState"
+	
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	bool hasOnUpdate = true
+	
+	string[] transitionTo = 		[ "forceIdle",	"forceFreeze",	"stand" ]
+	string[] transitionCondition = 	[ "",		"",			"=" ]
+	
+	string scriptedClassName = "ForceWalk"
+
+	float maxSpeed	= 3.0f
+}
+
+
+//------------ GROUND LOCOMOTION ------------
+
+stand : locomotionGround
+{	
+	string[] transitionTo = 		[ "snapToCover",   	"aimWalk",	"ladder",	"forceIdle",	"forceWalk",	"forceFreeze",  "crouch",  	"dodge", 	"sprint",	"vault",	"jump",		"toAir",	"playerAdjust"	]
+	string[] transitionCondition = 	[ "",   			"", 		 "",		 "",			 "",			 "",		    "",      	"",   		"",		 	"",	 		"",		 	"",	     	""			]
+		
+	string[] enterConstraintsStates		= [ "HighLevel.sceneTierIV", "HighLevel.sceneTierV" ]
+	bool[]	enterConstraintsLogic		= [ false, false ]
+	
+	bool hasOnEnter = true
+}
+
+aimWalk : stand
+{
+	bool hasEnterCondition = true
+	
+	string[] transitionTo = 		[ "snapToCover",	"stand",	"ladder",	"forceIdle",	"forceWalk",	"forceFreeze", 	"crouch", 	"dodge",  	"sprint",	"vault",	"jump",		"toAir",	"playerAdjust"  ]
+	string[] transitionCondition = 	[ "",   			"=",	 	"",		 	"",			 	"",			 	"",		    	"",    		"",	    	"",		 	"",		 	"",		 	"",		 	""      	]
+	
+	float maxSpeed 						= 2.5f
+}
+
+dodge : locomotionGround
+{
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	bool hasOnExit = true
+
+	string[] transitionTo = 		[ "stand", 	"kereznikovDodge", "ladder", 	"vault",  	"jump", "sprint" ]
+	string[] transitionCondition = 	[ "=",	  	 "",    		    "",    		"",    		"",  	""   ]
+	
+	float speedBoost					= "11.0f"	// [m/s]
+	float speedBoostMaxSpeed			= "15.0f"	// [m/s]
+	float deceleration					= "35.0f"
+	float brake							= "22.0f"   
+	float maxDuration 					= "0.25f"
+	float timeFrameToExtendKerenzikov 	= "0.11f"
+	bool speedBoostInputRequired		= true
+	bool speedBoostMultiplyByDot		= false
+	
+	float downwardsGravity 	= -4
+}
+
+kereznikovDodge : dodge
+{
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	bool hasOnUpdate = true
+	
+	string[] transitionTo = 		[ "stand",	 "ladder", 	"vault" ]
+	string[] transitionCondition = 	[ "=",	     "",     	""  ]	
+
+	bool disable			 = false
+	
+	bool activateOnAim	     = true
+	bool activateOnShoot 	 = true
+	bool activateOnCyberware = true // left hand
+	
+	float deceleration					= "35.0f"
+	float brake							= "22.0f"
+}
+
+crouch : locomotionGround
+{
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	
+	string animationStateName = "donotuse"
+
+	string[] transitionTo =			[ "snapToCover",	"toForceState", "stand", 	"dodge",	"sprint",	"vault", 	"jump",	"toAir", 	"ladder", "playerAdjust" ]
+	string[] transitionCondition =	[ "",				"",	     		"=",		"",		 	"",	  		"",	 		"",	 	"",   		"",    		""] 
+	
+	// string[] enterConstraintsStates 			= [ "UpperBody.emptyHands" ]
+	// bool[] 	enterConstraintsLogic 			= [ true ]
+	
+	float maxSpeed 						= "2.5f"
+	float capsuleHeight 				= "0.9f"
+}
+
+sprint : locomotionGround
+{
+	string[] transitionTo = 		[ "toForceState",	"stand",	"slide",	"vault",	"jump",	"toAir", 	"ladder", 	"wallRun" ]
+	string[] transitionCondition = 	[ "",				"=",		"",			"",			"",		"",   		"", 		"" ]
+	
+	bool hasEnterCondition	= true
+	bool hasOnEnter			= true
+	bool hasOnExit			= true
+	
+	string animationStateName = "sprint"
+
+	string[] enterConstraintsStates		= [ "UpperBody.aimingState" ]
+	bool[]	enterConstraintsLogic		= [ false ]
+	
+	float enterAngleThreshold			= 45.f;
+	
+	float maxSpeed 						= "8.5f"
+	float brakeDot						= "-1.1f" // < -1, never brake
+}
+
+slide : locomotionGround
+{
+	bool hasEnterCondition	= true
+	bool hasOnEnter			= true
+	bool hasOnExit       	= true
+	bool hasOnUpdate		= true
+	
+	//CName onEnterCameraParamsName = "LockedHeading"
+	
+	string[] transitionTo = 		[ "crouch", "stand",	"kereznikovSlide",	"toAir",	"ladder" ]
+	string[] transitionCondition = 	[ "=",		"=",		"",					"",			"" ]
+	
+	bool allowMovementInput				= false
+	//bool allowRotation			    = false
+	float maxSpeed						= "0.0f"
+	float acceleration					= "0.0f"
+	float deceleration					= "5.0f"
+	float brake							= "32.0f"
+	
+	float capsuleHeight 				= "0.9f"
+	float minSpeedToExit				= "2.0f"
+	float minSpeedToEnter				= "8.0f"
+	
+	bool pushAnimEventOnEnter			= true
+}
+
+kereznikovSlide : slide
+{		
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	bool hasOnUpdate = true
+	
+	string animationStateName = "slide"
+
+	CName onEnterCameraParamsName = "Default"
+	
+	string[] transitionTo = 		[ "crouch",	"stand",	"ladder",	"vault"  ]
+	string[] transitionCondition = 	[ "=",		"=",		"",			""    ]
+
+	bool disable = false
+
+	bool activateOnAim	     = true
+	bool activateOnShoot 	 = true
+	bool activateOnCyberware = true // left hand
+	
+	bool allowMovementInput				= false
+	bool allowRotation					= true
+	
+	float maxSpeed						= "0.0f"
+
+	float speedBoost					= "9.0f"	// [m/s]
+	float speedBoostMaxSpeed			= "8.5f"	// [m/s]
+	
+	float capsuleHeight 				= "0.9f"
+	float minSpeedToExit				= "2.0f"
+	
+	bool pushAnimEventOnEnter			= false
+}
+
+climb : locomotionGround
+{
+	CName onEnterCameraParamsName = "LockedHeading"
+	
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	string stateBodyClassName = "Climb"
+	
+	string[] transitionTo = 		[ "stand", 	"crouch" ]
+	string[] transitionCondition = 	[ "", 		"=" ]
+	
+	float grabDuration					= 0.1
+	float verticalDuration				= 0.5
+	float horizontalDuration			= 0.3
+	float minHeight						= 0.4
+	float maxHeight						= 2
+	float detectionRange				= 1
+	float forwardStep					= 0.5
+	float minSpeed						= 6.0
+	float minExtent						= 0.1
+	
+	float enterAngleThreshold			= 45.f;
+	
+	float capsuleHeight 				= "0.9f"
+	
+	bool allowClimbOnlyWhenMovingDown	= true
+}
+
+vault : climb
+{
+	bool hasOnExit 						= true
+	float capsuleHeight 				= "0.9f"
+
+	CName onEnterCameraControllerName = "FPPController"
+	
+	string[] transitionTo = 		[ "vaultLanding" ]
+	string[] transitionCondition = 	[ "" ]
+	
+	float minHeight						= 0.8
+	float maxHeight						= 1.2
+	float verticalDuration				= 0.1	
+	float horizontalDuration			= 0.28
+	float grabDuration					= 0.0
+	float acceleration					= 10.0f
+	float deceleration					= 1.6f
+	float minSpeed						= 6.0f
+	float minExtent						= 0.01
+	float enterAngleThreshold			= 45.f
+	float detectionRange				= 2.0
+	float maxSpeedNormalizer			= 8.5	// at this speed (sprint) the detection is at the full range, specified here, also the extent is at max
+	
+	float forwardStep					= 0.5
+	float maxExtent						= 2.1
+
+	bool requireDirectionalInputToVault = true 
+	bool allowClimbOnlyWhenMovingDown	= false
+}
+
+ladder : locomotionGround
+{
+	string stateBodyClassName = "LocomotionLadder"
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	CName onEnterCameraParamsName = "LockedHeading"
+	
+	string animationStateName = "ladder"
+	
+	string[] transitionTo = 		[ "stand",	"ladderSprint", "jump" 	]
+	string[] transitionCondition = 	[ "=",		"",				"" 	]
+	
+	float speedTravel				= 2.5f
+	
+	float enterDurationTop				= 0.5f
+	float exitDurationTop				= 0.5f
+	float exitStepTop					= -1.5f
+	float verticalStepTop				= -0.3f
+	float verticalStepDurationTop		= 0.3f
+
+	float enterDurationBottom			= 0.25f
+	float exitDurationBottom			= 0.5f
+	float exitStepBottom				= 0.6f
+	float verticalStepBottom			= 0.3f
+	float verticalStepDurationBottom	= 0.3f
+
+	float enterDurationJump				= 0.25f
+	float verticalStepJump				= 0.0f
+	float verticalStepDurationJump		= 0.0f
+	
+	float enterOffset					= 0.0f
+	
+	float enterAngleThreshold			= 60.f;
+	float crouchPushMagnitude			= 3.f;
+	bool allowRotation					= true
+}
+
+ladderSprint : ladder
+{
+	float speedTravel				= 4.5f
+	bool hasEnterCondition = true
+	
+	float enterDurationTop				= 0.25f
+	float exitDurationTop				= 0.25f
+
+	float enterDurationBottom			= 0.125f
+	float exitDurationBottom			= 0.25f
+
+	float enterDurationJump				= 0.125f
+	
+	string[] transitionTo = 		[ "stand",	"ladder",	"jump" ]
+	string[] transitionCondition = 	[ "=",		"=",		""  ]
+}
+
+
+vaultLanding : vault
+{
+	string stateBodyClassName = "LocomotionSimple"
+	bool hasEnterCondition = false
+	bool hasExitCondition = true
+	bool hasOnExit = false
+	string[] transitionTo = 		[ "stand" ]
+	string[] transitionCondition = 	[ "" ]	
+	
+	bool allowMovementInput				= false
+}
+
+
+//------------ AIR LOCOMOTION ------------
+
+fall : locomotionAir
+{
+	string alias = "toAir"
+	
+	string[] transitionTo =			[ "airHover", 	"regularLand",	"hardLand",	"veryHardLand",	"doubleJump", 	"dodgeAir",	"climb", 	"ladder", 	"wallRun" ]
+	string[] transitionCondition =	[  "",			"=",			"=",		"=",			"",	   			"",        	"",	  		"",			"" 	  ]
+	
+	float maxTimeToEnterJump		= 0.2f
+}
+
+airHover : locomotionAir
+{
+	string[] transitionTo =			[ "fall", "superheroFall" ]
+	string[] transitionCondition =	[ "=",    "="		      ]
+
+	bool enableAirHover	   				= true
+	
+	bool activateAirHoverOnAim			= false		// pulling aim activates AirHover/ "stabilizers" 
+	bool enableAutoSuperheroFall		= false		// automatically transitions to superheroFall after reaching the minTimeToEnterSuperheroFall
+	
+	int numberOfAirHovers				= 1			// the number of times AirHover/ "stabilizers" can be used while in air
+	
+	float inputHoldTimeToEnter			= 0.2f
+	float airHoverHeightToEnter		 	= 0.5f		// [m] value lower that this will be ignored
+
+	float minTimeToEnterSuperheroFall   = 0.9f		// value lower that this will not allow transitioning to superheroFall
+	float maxChargeToEnterSuperheroFall = 1.6f	
+	float maxAirHoverDuration			= 2.5f
+	
+	float verticalAirHoverImpulse  	    = 1.2f
+	float downwardsGravity 				= -0.1
+	float maxSpeed						= 1.4f
+	float deceleration					= "5.5f"
+	float brake							= "1.2f"
+}
+
+superheroFall : locomotionAir
+{
+	string[] transitionTo =			[ "superheroLand" ]
+	string[] transitionCondition =	[ "=" ]
+
+	bool enableSuperheroFall			= true
+	
+	float superheroLandingHeightToEnter	= 1.1f		//	[m] value lower that this will be ignored
+
+	float superheroSlamLandingHeight	= 4.0f		//	[m] height determining the superhero landing type (currently only one)
+	float superheroDeathLandingHeight	= 50.f
+	
+	float inputHoldTime					= 0.2f
+	float downwardsGravity 				= -18
+	float verticalImpulse 				= -20.0f	// the impulse pushing player to the ground
+}
+
+jump : locomotionAir
+{
+	string[] transitionTo = 		[ "playerAdjust", 	"airHover", 	"regularLand",	"hardLand",	"veryHardLand",	"doubleJump", 	"dodgeAir", "climb",	"ladder",	"fall", 	"wallRun" ]
+	string[] transitionCondition = 	[ "",		   		"",	    		"=",			"=",		"=",		   	"",	   			"",     	"",			"",		 	"",			""     ]
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	
+	float jumpHeight 					= 1.0f
+}
+
+doubleJump : locomotionAir
+{
+	string[] transitionTo = 		[ "regularLand", "airHover",  "hardLand",	"veryHardLand",	"climb", 	"dodgeAir", "ladder", 	"wallRun", 	"fall", "doubleJump"	 ]
+	string[] transitionCondition = 	[ "=",			  "",			"=",		"=",		 	"",	  		"",	  		"",   		"",	  		"",   	""		 ]
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	
+	string animationStateName = "doublejump"
+	
+	bool disable	= false
+	
+	float speedBoost					= 1.0f
+	float speedBoostMaxSpeed			= 4.5f
+	bool  speedBoostInputRequired		= true
+	
+	float jumpHeight 					= 2.6f
+	
+	float softBlockAimingOnEnterFor		= 0.5f
+}
+
+wallJump : locomotionAir
+{
+	string[] transitionTo = 		[ "regularLand", "airHover",  	"hardLand",	"veryHardLand",	"climb", 	"dodgeAir",	"ladder",	"fall",	"doubleJump", 	"wallRun" ]
+	string[] transitionCondition = 	[ "=",			  "",			"=",		"=",		 	"",	  		"",	  		"",		 	"",		"",				""     ]
+	
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	
+	float speedBoost					= 1.5f
+	float speedBoostMaxSpeed			= 2.5f
+	bool  speedBoostInputRequired		= true
+	
+	float jumpHeight 					= 1.0f
+	
+	//float softBlockAimingOnEnterFor		= 0.5f
+}
+
+dodgeAir : locomotionAir
+{
+	bool hasEnterCondition = true
+	bool hasOnEnter = true
+
+	string[] transitionTo = 		[ "playerAdjust", 	"regularLand",	"hardLand",	"veryHardLand", "kereznikovDodge",	"doubleJump", 	"climb",	"ladder", 	"wallRun",		"fall"  ]
+	string[] transitionCondition = 	[ "",	     		"=",			"=",		"=",		   	 "", 			 	"",	       		"",	 		"",	 		"",		 		""   ]
+	
+	bool disable	= false
+	
+	float speedBoost					= "13.0f"	// [m/s]
+	float speedBoostMaxSpeed			= "17.0f"	// [m/s]
+	float deceleration					= "30.0f"
+	float brake							= "22.0f"   
+	float maxDuration 					= "0.45f"
+	float timeFrameToExtendKerenzikov 	= "0.25f"
+	bool speedBoostInputRequired		= true
+	bool speedBoostMultiplyByDot		= false
+	
+	float downwardsGravity 		= -4
+	
+	int numberOfAirDodges 	= 1
+}
+
+//------------ LANDINGS ------------
+
+superheroLand : locomotionGround
+{
+	bool hasOnEnter = true
+	
+	string[] transitionTo = 		[ "stand" ]
+	string[] transitionCondition = 	[ "=" ]
+	
+	bool allowMovementInput				= false 
+	bool allowRotation					= false
+	float maxSpeed						= 1.0
+	float acceleration					= 2.0
+	float timeToStand					= 0.7
+}
+
+regularLand : stand
+{
+	string animationStateName = "softland" // for backward compatibility. To Be Removed.
+	
+	string[] transitionTo		= [ "sprint",	"crouch",	"stand" ]
+	string[] transitionCondition	= [ "=",		"",		"" ]
+	
+	//bool hasEnterCondition		= true
+	bool hasOnEnter				= true
+	
+}
+
+hardLand : regularLand
+{
+}
+
+veryHardLand : locomotionGround
+{
+	bool hasOnEnter = true
+	
+	string[] transitionTo = 		[ "stand" ]
+	string[] transitionCondition = 	[ "=" ]
+	
+	bool allowMovementInput				= true 
+	bool allowRotation					= false
+	float maxSpeed						= 2.0
+	float acceleration					= 4.0
+	
+	float duration						= 0.5
+}
+
+
+//------------ ADJUSTMENTS ------------
+
+playerAdjust : baseState
+{
+	string stateBodyClassName = "ActionAdjust"
+	bool hasOnEnter = true
+	bool hasOnExit = true
+	bool hasEnterCondition = true
+	bool hasExitCondition = true
+	
+	string[] transitionTo = 		[ "forceFreeze", 	"forceIdle",	"stand" ]
+	string[] transitionCondition = 	[ "",				"",				"" ]
+	
+	float slideDuration				= 0.3f
+	float rotationDuration			= 0.3f
+	
+}
+
+snapToCover : locomotionGround
+{
+	string stateBodyClassName = "LocomotionSimple"
+	bool hasOnEnter = true
+	bool hasEnterCondition = true
+	bool hasExitCondition = true
+	bool hasOnUpdate = true
+	
+	CName onEnterCameraParamsName = "Cover"
+	
+	string animationStateName = "snap_to_cover"
+	
+	string[] transitionTo = 		[ "stand" ]
+	string[] transitionCondition = 	[ "" ]
+	
+	float adjustRange = 1.f
+	float slideDuration = 0.1f
+	float rotationDuration = 0.1f
+	
+	bool allowWithoutWeapon = true
+	bool blockLocomotionWithoutWeapon = true
+}
+
+wallRun : baseLocomotionState
+{	
+	string stateBodyClassName = "LocomotionWallRun"
+	bool hasOnExit = true
+	bool hasEnterCondition = true
+	bool hasExitCondition = true
+	bool imperfectTurn = true
+	
+	string animationStateName = "wall_run"
+	
+	string[] transitionTo = 		[ "wallJump", "stand" ]
+	string[] transitionCondition = 	[  "=", 	   ""  ]
+	
+	// standard locomotion parameters
+	float upwardsGravity 				= -16
+	float downwardsGravity 				= -5
+	float maxSpeed						= 8.0
+
+	bool considerMaxWallRunTime			= true
+	
+	// specific wallrun parameters
+	float minHorizontalSpeed 			= 3.5
+	float maxVerticalSpeed				= 10
+	float maxWallSurfaceInwardsAngle	= 40
+	float maxWallSurfaceOutwardsAngle	= 40
+	float maxStrafeAngle				= 70	
+	float minWallRunTime 				= 0.2
+	float maxWallRunTime 				= 1.75
+	float handOffsetTestPositionX 		= 0.4	
+	float handOffsetTestPositionY 		= 1
+	float offWallHorizontalImpulse		= 2.0f
+}

@@ -43,9 +43,17 @@ class ClassyScene(QGraphicsScene):
         self.addItem(node)
         node.setZValue(self.get_next_node_z_value())
 
+    def get_node(self, node_name):
+        return self.nodes.get(node_name, None)
+
     def add_edge(self, node_from, node_to, conditional_to=False, two_way=False, conditional_from=False):
         edge = ClassyEdge(two_way=two_way, conditional_to=conditional_to, conditional_from=conditional_from)
         edge.set_node_from(self.nodes.get(node_from))
         edge.set_node_to(self.nodes.get(node_to))
         self.addItem(edge)
         self.edges.append(edge)
+
+    def clear(self):
+        QGraphicsScene.clear(self)
+        self.nodes = dict()
+        self.edges = list()
