@@ -41,7 +41,7 @@ class ClassyNode(QGraphicsItem):
                      self._b_height)
 
     def _update_size(self):
-        self._b_width = self.metrics.averageCharWidth() * (len(self.label) + 1) + (self.margin * 2)
+        self._b_width = self.metrics.width(self.label + "XXX") + (self.margin * 2) + 15
         self._b_height = self.metrics.height() + (self.margin * 2)
 
         self._x = -(self._b_width / 2) - self.margin
@@ -71,3 +71,11 @@ class ClassyNode(QGraphicsItem):
         painter.setPen(self.node_pen)
         painter.setFont(nodes_font)
         painter.drawText(r.bottomLeft().x() + self.margin, r.bottomLeft().y() - self.margin, self.label)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange and self.scene():
+            for e in self.edges_in:
+                e.update()
+            for e in self.edges_out:
+                e.update()
+        return QGraphicsItem.itemChange(self, change, value)

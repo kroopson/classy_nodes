@@ -1,3 +1,5 @@
+from PySide.QtCore import QPointF
+from PySide.QtGui import QTransform
 from PySide.QtGui import QGraphicsScene
 
 from classy_nodes.view import ClassyNode, ClassyEdge
@@ -52,8 +54,31 @@ class ClassyScene(QGraphicsScene):
         edge.set_node_to(self.nodes.get(node_to))
         self.addItem(edge)
         self.edges.append(edge)
+        edge.update()
 
     def clear(self):
         QGraphicsScene.clear(self)
         self.nodes = dict()
         self.edges = list()
+
+    def layout_nodes(self):
+        nodes_count = len(self.nodes)
+        if nodes_count == 0:
+            return
+
+        step = 360 / nodes_count
+
+        total_width = 0
+        for node_name in self.nodes:
+            total_width += self.nodes.get(node_name).boundingRect().width()
+
+        index = 0
+        for node in self.nodes:
+            # noinspection PyUnresolvedReferences
+            xform = QTransform()
+            angle = index * step
+            xform.rotate(angle)
+
+            mapped = xform.map(QPointF(total_width / 2, 0))
+            self.nodes.get(node).setPos(mapped)
+            index += 1

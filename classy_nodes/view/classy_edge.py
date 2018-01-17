@@ -1,6 +1,6 @@
 import weakref
 from PySide.QtCore import QRect, QPointF, Qt
-from PySide.QtGui import QGraphicsItem, QPainter, QPen, QVector2D, QTransform, QBrush
+from PySide.QtGui import QGraphicsItem, QPainter, QPen, QVector2D, QTransform, QBrush, QWidget
 from config import CONDITIONAL_TRANSITION_COLOR
 from config import NON_CONDITIONAL_TRANSITION_COLOR
 
@@ -11,7 +11,6 @@ class ClassyEdge(QGraphicsItem):
 
         self.node_from = None
         self.node_to = None
-
         self.conditional_to = conditional_to
         self.conditional_from = conditional_from
 
@@ -133,7 +132,6 @@ class ClassyEdge(QGraphicsItem):
             painter.setBrush(NON_CONDITIONAL_TRANSITION_COLOR)
         self._draw_arrow(painter, from_start, from_end, self.arrow_length)
 
-
     @staticmethod
     def _draw_arrow(painter, from_point, to_point, arrow_size=5):
         painter.drawLine(from_point, to_point)
@@ -152,3 +150,30 @@ class ClassyEdge(QGraphicsItem):
         t.rotate(120)
         arrow_points.append(center + t.map(center_to_t.toPointF()))
         painter.drawPolygon(arrow_points)
+
+
+class EdgeWidget(QWidget):
+    def __init__(self, parent=None, conditional=False):
+        if conditional:
+            self.pen = QPen(CONDITIONAL_TRANSITION_COLOR)
+            self.brush = QBrush(CONDITIONAL_TRANSITION_COLOR)
+        else:
+            self.pen = QPen(NON_CONDITIONAL_TRANSITION_COLOR)
+            self.brush = QBrush(NON_CONDITIONAL_TRANSITION_COLOR)
+
+        self.pen.setWidth(4)
+        QWidget.__init__(self, parent)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(self.brush)
+        painter.setPen(self.pen)
+        painter.setRenderHint(QPainter.Antialiasing)
+        rect = self.geometry()
+        from_point = QPointF(0, rect.height() / 2)
+        to_point = QPointF(rect.width(), rect.height() / 2)
+        # from_point = QPointF(0, 0)
+        # to_point = QPointF(rect.width(), rect.height())
+
+        # noinspection PyProtectedMember
+        ClassyEdge._draw_arrow(painter, from_point, to_point, 10)
